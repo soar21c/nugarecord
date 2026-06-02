@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="누가기록">
+<title>누가기록</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
+body{font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:#f1f5f9;min-height:100vh}
+#app{max-width:560px;margin:0 auto;min-height:100vh;background:#f1f5f9}
+.hdr{background:#1e293b;color:#fff;padding:13px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.2)}
+.back-btn{background:rgba(255,255,255,0.15);border:none;color:#fff;border-radius:6px;padding:7px 12px;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;flex-shrink:0}
+.hdr-title{flex:1;min-width:0}
+.hdr-title h1{font-size:16px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.logo-wrap{display:flex;align-items:center;gap:10px;flex:1}
+.logo-icon{font-size:26px;flex-shrink:0}
+.logo-title{font-size:19px;font-weight:800;letter-spacing:-0.5px}
+.logo-sub{font-size:11px;color:#94a3b8;margin-top:1px}
+.hdr-btn{background:#3b82f6;border:none;color:#fff;border-radius:8px;padding:8px 13px;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit;white-space:nowrap;flex-shrink:0}
+.sbox{background:#fff;border-radius:14px;margin:12px 14px 0;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,0.07)}
+.sbox-title{font-size:12px;font-weight:700;color:#94a3b8;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px}
+.class-card{background:#fff;border:none;border-radius:14px;padding:15px 16px;display:flex;align-items:center;cursor:pointer;text-align:left;box-shadow:0 1px 4px rgba(0,0,0,0.07);width:100%;font-family:inherit;margin-bottom:10px;border-left:4px solid #3b82f6}
+.class-card:active{background:#f8fafc}
+.class-name{font-size:16px;font-weight:700;color:#1e293b}
+.class-meta{font-size:12px;color:#94a3b8;margin-top:3px}
+.del-btn{background:none;border:none;color:#cbd5e1;font-size:22px;cursor:pointer;padding:2px 6px;line-height:1;font-family:inherit}
+.inp{width:100%;border:1.5px solid #e2e8f0;border-radius:9px;padding:9px 12px;font-size:14px;outline:none;font-family:inherit;background:#f8fafc;transition:border 0.15s}
+.inp:focus{border-color:#3b82f6;background:#fff}
+textarea.inp{resize:vertical;min-height:70px}
+.date-inp{width:100%;border:1.5px solid #e2e8f0;border-radius:9px;padding:8px 11px;font-size:13px;outline:none;font-family:inherit;background:#f8fafc;margin-bottom:10px}
+.btn-primary{background:#1e293b;color:#fff;border:none;border-radius:9px;padding:11px 0;width:100%;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;display:block;margin-top:8px}
+.btn-primary:disabled{opacity:0.38;cursor:default}
+.btn-sm{background:#1e293b;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}
+.btn-outline{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;padding:8px 13px;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit}
+.student-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:12px 14px}
+.s-card{background:#fff;border:none;border-radius:12px;padding:10px 8px 9px;cursor:pointer;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,0.07);font-family:inherit;position:relative;overflow:hidden;border-top:3px solid #e2e8f0;width:100%}
+.s-card:active{background:#f8fafc}
+.s-photo{width:60px;height:60px;border-radius:50%;object-fit:cover;margin:0 auto 6px;display:block;border:2px solid #e2e8f0}
+.s-photo-ph{width:60px;height:60px;border-radius:50%;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;background:#f1f5f9;font-size:22px;border:2px solid #e2e8f0}
+.s-num{font-size:10px;color:#94a3b8;margin-bottom:1px}
+.s-name{font-size:13px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.s-rec{font-size:10px;color:#94a3b8;margin-top:2px}
+.tag-row{display:flex;flex-wrap:wrap;gap:5px}
+.chip{border-radius:20px;padding:4px 9px;font-size:12px;font-weight:600;display:inline-block}
+.tag-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px}
+.tag-btn{border-radius:9px;padding:9px 6px;cursor:pointer;font-size:12px;font-weight:700;font-family:inherit;transition:all 0.12s;border:1.5px solid}
+.filter-tags{display:flex;flex-wrap:wrap;gap:6px;padding:8px 14px 2px}
+.ftag{border-radius:20px;padding:4px 11px;cursor:pointer;font-size:11px;font-weight:700;font-family:inherit}
+.toolbar{display:flex;gap:8px;padding:10px 14px 4px}
+.stu-photo-big{width:64px;height:64px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,0.3);flex-shrink:0}
+.stu-photo-ph{width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0}
+.stu-name-big{font-size:19px;font-weight:800;color:#fff}
+.rec-item{border-bottom:1px solid #f1f5f9;padding-bottom:10px;margin-bottom:10px;position:relative}
+.rec-item:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.rec-date{font-size:11px;color:#94a3b8;margin-bottom:5px}
+.rec-memo{font-size:13px;color:#475569;margin-top:5px;line-height:1.6;background:#f8fafc;border-radius:7px;padding:7px 9px}
+.rec-del{position:absolute;top:0;right:0;background:none;border:none;color:#cbd5e1;cursor:pointer;font-size:20px;padding:0 4px;line-height:1;font-family:inherit}
+.empty{text-align:center;color:#94a3b8;padding:28px 0;font-size:14px}
+.home-empty{text-align:center;padding:60px 20px}
+.home-empty-icon{font-size:52px;margin-bottom:12px}
+.home-empty-text{color:#94a3b8;font-size:14px;line-height:1.7}
+.pb40{padding-bottom:40px}
+.badge{background:rgba(255,255,255,0.15);color:#e2e8f0;border-radius:10px;padding:2px 10px;font-size:12px;flex-shrink:0}
+.cls-badge-sm{font-size:10px;background:rgba(255,255,255,0.18);border-radius:4px;padding:2px 6px;color:#cbd5e1;display:inline-block;margin-bottom:3px}
+.hint{font-size:11px;color:#94a3b8;margin-bottom:8px;line-height:1.6}
+.file-btn{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;padding:9px 14px;cursor:pointer;font-size:13px;display:block;font-family:inherit;margin-bottom:8px;width:100%;text-align:center;font-weight:600}
+.file-btn:active{background:#e2e8f0}
+/* loading overlay */
+.overlay{position:fixed;inset:0;background:rgba(15,23,42,0.7);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;color:#fff;gap:14px}
+.spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,0.2);border-top-color:#3b82f6;border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.progress-bar-wrap{width:220px;background:rgba(255,255,255,0.15);border-radius:10px;height:6px}
+.progress-bar{background:#3b82f6;border-radius:10px;height:6px;transition:width 0.2s}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="loadingOverlay" style="display:none" class="overlay">
+  <div class="spinner"></div>
+  <div id="loadingMsg" style="font-size:15px;font-weight:600">엑셀 파일 읽는 중...</div>
+  <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+const TAGS=[
+  {id:'excellent',label:'🌟 우수',color:'#22c55e',bg:'#f0fdf4'},
+  {id:'active',label:'✋ 적극참여',color:'#3b82f6',bg:'#eff6ff'},
+  {id:'normal',label:'😐 보통',color:'#94a3b8',bg:'#f8fafc'},
+  {id:'distracted',label:'💬 수업외활동',color:'#f59e0b',bg:'#fffbeb'},
+  {id:'unprepared',label:'📦 준비물미지참',color:'#f97316',bg:'#fff7ed'},
+  {id:'sleepy',label:'😴 집중력부족',color:'#ef4444',bg:'#fef2f2'},
+  {id:'no_will',label:'🚫 참여의지없음',color:'#dc2626',bg:'#fef2f2'},
+  {id:'improved',label:'📈 태도개선',color:'#8b5cf6',bg:'#f5f3ff'},
+];
+
+let state={
+  view:'home',activeClassId:null,activeStudentId:null,
+  showAddClass:false,showImport:false,
+  newClassName:'',searchQuery:'',filterTag:null,
+  selTags:[],memo:'',dateInput:todayStr(),
+};
+
+function todayStr(){return new Date().toISOString().slice(0,10)}
+function load(){try{return JSON.parse(localStorage.getItem('nugarec3')||'[]')}catch{return[]}}
+function save(c){try{localStorage.setItem('nugarec3',JSON.stringify(c))}catch(e){alert('저장 공간이 부족합니다. 사진 데이터가 너무 클 수 있습니다.')}}
+let classes=load();
+
+const getCls=id=>classes.find(c=>c.id===id);
+const getStu=(cid,sid)=>getCls(cid)?.students.find(s=>s.id===sid);
+const tagInfo=id=>TAGS.find(t=>t.id===id);
+function lastTag(s){if(!s.records.length)return null;const r=s.records[0];return r.tags.length?tagInfo(r.tags[0]):null}
+function tagSummary(s){const c={};s.records.forEach(r=>r.tags.forEach(t=>{c[t]=(c[t]||0)+1}));return c}
+function filteredStudents(list){
+  let r=list;
+  if(state.searchQuery)r=r.filter(s=>s.name.includes(state.searchQuery)||String(s.number||'').includes(state.searchQuery));
+  if(state.filterTag)r=r.filter(s=>s.records.some(r=>r.tags.includes(state.filterTag)));
+  return r;
+}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+// ── 엑셀 사진명렬표 파싱 (JSZip) ─────────────────────────
+async function parseNamyeolXlsx(arrayBuffer){
+  setLoading(true,'파일 압축 해제 중...',10);
+  const zip = await JSZip.loadAsync(arrayBuffer);
+
+  // 1) drawing rels: rId -> image 파일명
+  setLoading(true,'이미지 위치 분석 중...',25);
+  const relsFile = zip.file('xl/drawings/_rels/drawing1.xml.rels');
+  const rid2file = {};
+  if(relsFile){
+    const relsXml = await relsFile.async('text');
+    const re = /Id="(rId\d+)"[^>]*Target="\.\.\/([^"]+)"/g;
+    let m;
+    while((m=re.exec(relsXml))!==null) rid2file[m[1]]=m[2];
+  }
+
+  // 2) drawing xml: (col, row) -> rId 매핑 (col만으로 하면 같은 col이 여러 row에 있어 덮어씌워짐)
+  const drawFile = zip.file('xl/drawings/drawing1.xml');
+  const pos2rid = {}; // key: "col,row"
+  if(drawFile){
+    const drawXml = await drawFile.async('text');
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(drawXml,'text/xml');
+    const anchors = doc.querySelectorAll('twoCellAnchor');
+    anchors.forEach(anchor=>{
+      const fromEl = anchor.querySelector('from');
+      if(!fromEl)return;
+      const col = parseInt(fromEl.querySelector('col')?.textContent||'0');
+      const row = parseInt(fromEl.querySelector('row')?.textContent||'0');
+      const blip = anchor.querySelector('blip');
+      if(blip){
+        const rid = blip.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships','embed');
+        if(rid) pos2rid[`${col},${row}`]=rid;
+      }
+    });
+  }
+
+  // 3) sheet xml 파싱: 학생 텍스트 추출 (col0, row0 모두 저장)
+  setLoading(true,'학생 정보 읽는 중...',45);
+  const sheetFile = zip.file('xl/worksheets/sheet1.xml');
+  const students = [];
+  const nameRe = /(\d+)학년\s*(\d+)반\s*(\d+)번\s+(.+)/;
+
+  if(sheetFile){
+    const sheetXml = await sheetFile.async('text');
+    const ssFile = zip.file('xl/sharedStrings.xml');
+    const sharedStrings = [];
+    if(ssFile){
+      const ssXml = await ssFile.async('text');
+      const ssDoc = new DOMParser().parseFromString(ssXml,'text/xml');
+      ssDoc.querySelectorAll('si').forEach(si=>{
+        sharedStrings.push(si.textContent);
+      });
+    }
+    const shDoc = new DOMParser().parseFromString(sheetXml,'text/xml');
+    shDoc.querySelectorAll('c').forEach(c=>{
+      const t=c.getAttribute('t');
+      let val='';
+      if(t==='s'){
+        const idx=parseInt(c.querySelector('v')?.textContent||'-1');
+        val=sharedStrings[idx]||'';
+      } else {
+        val=c.querySelector('v')?.textContent||'';
+      }
+      const match=nameRe.exec(val);
+      if(match){
+        const ref=c.getAttribute('r')||'';
+        const colStr=ref.replace(/\d/g,'');
+        const rowNum=parseInt(ref.replace(/\D/g,''));
+        let col0=0;
+        for(let i=0;i<colStr.length;i++) col0=col0*26+(colStr.charCodeAt(i)-64);
+        col0--; // 0-indexed
+        const row0=rowNum-1; // 0-indexed
+        students.push({grade:match[1],cls:match[2],num:parseInt(match[3]),name:match[4].trim(),col0,row0});
+      }
+    });
+  }
+
+  // 4) 이미지 base64 추출 - 이미지 row = 학생 텍스트 row - 1 (바로 위 행)
+  setLoading(true,'사진 불러오는 중...',60);
+  const results=[];
+  for(let i=0;i<students.length;i++){
+    const s=students[i];
+    const imgRow = s.row0 - 1; // 이미지는 텍스트 바로 위 행
+    const rid=pos2rid[`${s.col0},${imgRow}`];
+    let photo=null;
+    if(rid){
+      const imgPath='xl/'+rid2file[rid];
+      const imgFile=zip.file(imgPath);
+      if(imgFile){
+        const bytes=await imgFile.async('uint8array');
+        const mime=imgPath.endsWith('.png')?'image/png':'image/jpeg';
+        let binary='';
+        for(let b=0;b<bytes.length;b++) binary+=String.fromCharCode(bytes[b]);
+        photo=`data:${mime};base64,${btoa(binary)}`;
+      }
+    }
+    results.push({num:s.num,name:s.name,grade:s.grade,cls:s.cls,photo,id:Date.now()+i,records:[]});
+    setLoading(true,`사진 불러오는 중... (${i+1}/${students.length})`,60+Math.floor(i/students.length*35));
+  }
+  results.sort((a,b)=>a.num-b.num);
+  setLoading(false,'',100);
+  return results;
+}
+
+function setLoading(show,msg,pct){
+  document.getElementById('loadingOverlay').style.display=show?'flex':'none';
+  if(msg) document.getElementById('loadingMsg').textContent=msg;
+  if(pct!=null) document.getElementById('progressBar').style.width=pct+'%';
+}
+
+// ── Actions ──────────────────────────────────────────
+function addClass(){
+  const name=state.newClassName.trim();
+  if(!name)return;
+  classes.push({id:Date.now(),name,students:[]});
+  save(classes);state.newClassName='';state.showAddClass=false;render();
+}
+function deleteClass(id,e){
+  e.stopPropagation();
+  if(!confirm('이 반을 삭제하시겠습니까?\n모든 기록이 사라집니다.'))return;
+  classes=classes.filter(c=>c.id!==id);save(classes);render();
+}
+function addRecord(cid,sid){
+  if(!state.selTags.length&&!state.memo.trim())return;
+  const s=getStu(cid,sid);
+  s.records.unshift({id:Date.now(),date:state.dateInput,tags:[...state.selTags],memo:state.memo.trim()});
+  save(classes);state.selTags=[];state.memo='';state.dateInput=todayStr();render();
+}
+function deleteRecord(cid,sid,rid){
+  const s=getStu(cid,sid);s.records=s.records.filter(r=>r.id!==rid);save(classes);render();
+}
+function toggleTag(id){
+  const i=state.selTags.indexOf(id);
+  if(i>=0)state.selTags.splice(i,1);else state.selTags.push(id);render();
+}
+
+// ── File handlers ────────────────────────────────────
+window.handleXlsxFile=async function(e,classId){
+  const file=e.target.files[0];if(!file)return;
+  const buf=await file.arrayBuffer();
+  try{
+    const parsed=await parseNamyeolXlsx(buf);
+    if(!parsed.length){alert('학생 데이터를 찾을 수 없습니다.');return}
+    const cls=getCls(classId);
+    const existing=new Set(cls.students.map(s=>s.name));
+    let added=0;
+    parsed.forEach(p=>{
+      if(!existing.has(p.name)){cls.students.push(p);added++}
+    });
+    save(classes);
+    alert(`${added}명 추가 완료!\n(사진 포함)`);
+    state.showImport=false;render();
+  }catch(err){
+    setLoading(false);
+    alert('파일 읽기 오류: '+err.message);
+  }
+};
+
+window.handlePhotoFile=function(e,cid,sid){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{getStu(cid,sid).photo=ev.target.result;save(classes);render()};
+  reader.readAsDataURL(file);
+};
+
+// ── 백업 저장 / 불러오기 ──────────────────────────────
+window.backupData=function(){
+  const json=JSON.stringify(classes,null,2);
+  const blob=new Blob([json],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`누가기록_백업_${todayStr()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+window.handleRestoreFile=function(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const imported=JSON.parse(ev.target.result);
+      if(!Array.isArray(imported))throw new Error('올바른 백업 파일이 아닙니다.');
+      const existing=classes.map(c=>c.id);
+      let added=0,updated=0;
+      imported.forEach(ic=>{
+        const idx=classes.findIndex(c=>c.id===ic.id);
+        if(idx>=0){
+          // 기존 반이 있으면 기록만 병합 (더 최신 기록 유지)
+          const existingRecIds=new Set(classes[idx].students.flatMap(s=>s.records.map(r=>r.id)));
+          ic.students.forEach(is=>{
+            const stu=classes[idx].students.find(s=>s.id===is.id);
+            if(stu){
+              is.records.forEach(r=>{if(!existingRecIds.has(r.id))stu.records.push(r)});
+              stu.records.sort((a,b)=>b.date.localeCompare(a.date));
+            }
+          });
+          updated++;
+        } else {
+          classes.push(ic);added++;
+        }
+      });
+      save(classes);
+      alert(`불러오기 완료!\n새 반 ${added}개 추가, 기존 반 ${updated}개 기록 병합`);
+      render();
+    }catch(err){
+      alert('불러오기 실패: '+err.message);
+    }
+  };
+  reader.readAsText(file,'UTF-8');
+};
+
+// ── Render ────────────────────────────────────────────
+function render(){
+  const app=document.getElementById('app');
+  if(state.view==='student'&&state.activeClassId&&state.activeStudentId) renderStudent(app);
+  else if(state.view==='class'&&state.activeClassId) renderClass(app);
+  else renderHome(app);
+  const memo=app.querySelector('#memoTA');if(memo)memo.value=state.memo;
+  const si=app.querySelector('#searchInp');if(si)si.value=state.searchQuery;
+  const ni=app.querySelector('#newClsInp');if(ni)ni.value=state.newClassName;
+}
+
+function renderHome(app){
+  const t=todayStr();
+  app.innerHTML=`
+  <div class="hdr">
+    <div class="logo-wrap">
+      <span class="logo-icon">📋</span>
+      <div><div class="logo-title">누가기록</div><div class="logo-sub">학생 생활기록부 보조 앱</div></div>
+    </div>
+    <button class="hdr-btn" onclick="state.showAddClass=!state.showAddClass;render()">+ 반 추가</button>
+  </div>
+  ${state.showAddClass?`
+  <div class="sbox" style="margin-top:10px">
+    <div style="display:flex;gap:8px">
+      <input id="newClsInp" class="inp" placeholder="반 이름 (예: 1학년 2반 통합사회)" oninput="state.newClassName=this.value" onkeydown="if(event.key==='Enter')addClass()">
+      <button class="btn-sm" onclick="addClass()">추가</button>
+    </div>
+  </div>`:''}
+  ${classes.length===0?`<div class="home-empty"><div class="home-empty-icon">🏫</div><div class="home-empty-text">반을 추가하고<br>학생 명렬을 불러오세요.</div></div>`:''}
+  <div style="padding:12px 14px 0">
+    ${classes.map(cls=>{
+      const tr=cls.students.reduce((a,s)=>a+s.records.filter(r=>r.date===t).length,0);
+      return`<button class="class-card" onclick="openClass(${cls.id})">
+        <div style="flex:1">
+          <div class="class-name">${esc(cls.name)}</div>
+          <div class="class-meta">${cls.students.length}명 · 오늘 ${tr}건 기록</div>
+        </div>
+        <button class="del-btn" onclick="deleteClass(${cls.id},event)">×</button>
+        <span style="color:#94a3b8;font-size:18px;margin-left:4px">→</span>
+      </button>`;
+    }).join('')}
+  </div>
+  <div class="sbox" style="margin-top:10px">
+    <div class="sbox-title">📦 데이터 백업 / 복원</div>
+    <div class="hint">컴↔폰 간 데이터 이동, 또는 기기 분실 대비 백업에 사용하세요.</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn-primary" style="background:#0f766e;margin-top:0;flex:1" onclick="backupData()">💾 백업 저장 (.json)</button>
+      <label style="flex:1">
+        <input type="file" accept=".json" style="display:none" onchange="handleRestoreFile(event)">
+        <div class="btn-primary" style="background:#1d4ed8;margin-top:0;text-align:center;cursor:pointer">📂 백업 불러오기</div>
+      </label>
+    </div>
+  </div>
+  <div style="height:40px"></div>`;
+}
+
+function renderClass(app){
+  const cls=getCls(state.activeClassId);
+  if(!cls){state.view='home';render();return}
+  const students=filteredStudents(cls.students);
+  app.innerHTML=`
+  <div class="hdr">
+    <button class="back-btn" onclick="state.view='home';render()">← 반 목록</button>
+    <div class="hdr-title" style="margin-left:10px"><h1>${esc(cls.name)}</h1></div>
+    <button class="hdr-btn" style="background:#16a34a;font-size:12px;padding:7px 11px" onclick="exportExcel(${cls.id})">📥 엑셀</button>
+  </div>
+  <div class="toolbar">
+    <input id="searchInp" class="inp" placeholder="이름 / 번호 검색" oninput="state.searchQuery=this.value;render()">
+    <button class="btn-outline" style="${state.showImport?'background:#1e293b;color:#fff;border-color:#1e293b':''}" onclick="state.showImport=!state.showImport;render()">+ 학생</button>
+  </div>
+  <div class="filter-tags">
+    <button class="ftag" style="background:${!state.filterTag?'#1e293b':'#f1f5f9'};color:${!state.filterTag?'#fff':'#64748b'};border:1px solid ${!state.filterTag?'#1e293b':'#e2e8f0'}" onclick="state.filterTag=null;render()">전체</button>
+    ${TAGS.map(t=>`<button class="ftag" style="background:${state.filterTag===t.id?t.color:t.bg};color:${state.filterTag===t.id?'#fff':t.color};border:1px solid ${t.color}" onclick="state.filterTag=state.filterTag==='${t.id}'?null:'${t.id}';render()">${t.label}</button>`).join('')}
+  </div>
+  ${state.showImport?`
+  <div class="sbox">
+    <div class="sbox-title">학생 명렬 추가</div>
+    <div class="hint">📌 <b>교과별수강학생사진명렬표 엑셀</b>을 업로드하면<br>번호·이름·사진이 자동으로 등록됩니다.</div>
+    <input type="file" id="xlsxInp" accept=".xlsx,.xls" style="display:none" onchange="handleXlsxFile(event,${cls.id})">
+    <button class="file-btn" onclick="document.getElementById('xlsxInp').click()">📂 명렬표 엑셀 업로드 (사진 자동 등록)</button>
+  </div>`:''}
+  <div class="student-grid pb40">
+    ${students.length===0?`<div class="empty" style="grid-column:1/-1">${cls.students.length===0?'학생을 추가해주세요.':'검색 결과가 없습니다.'}</div>`:''}
+    ${students.map(s=>{
+      const lt=lastTag(s);
+      const borderColor=lt?lt.color:'#e2e8f0';
+      const photoHtml=s.photo
+        ?`<img src="${s.photo}" class="s-photo" alt="">`
+        :`<div class="s-photo-ph">👤</div>`;
+      return`<button class="s-card" style="border-top-color:${borderColor}" onclick="openStudent(${cls.id},${s.id})">
+        ${photoHtml}
+        <div class="s-num">${s.grade?`${s.grade}-${s.cls} `:''}${s.number||s.num||''}번</div>
+        <div class="s-name">${esc(s.name)}</div>
+        <div class="s-rec">${s.records.length}건</div>
+        ${lt?`<div style="margin-top:3px"><span style="width:8px;height:8px;border-radius:50%;background:${lt.color};display:inline-block"></span></div>`:''}
+      </button>`;
+    }).join('')}
+  </div>`;
+}
+
+function renderStudent(app){
+  const cls=getCls(state.activeClassId);
+  const s=getStu(state.activeClassId,state.activeStudentId);
+  if(!s){state.view='class';render();return}
+  const summary=tagSummary(s);
+  const num=s.number||s.num||'';
+  const photoHtml=s.photo
+    ?`<img src="${s.photo}" class="stu-photo-big" alt="">`
+    :`<div class="stu-photo-ph">👤</div>`;
+  app.innerHTML=`
+  <div class="hdr">
+    <button class="back-btn" onclick="state.view='class';render()">← 목록</button>
+    <div style="display:flex;align-items:center;gap:11px;flex:1;margin-left:10px;min-width:0">
+      ${photoHtml}
+      <div style="min-width:0">
+        <div class="cls-badge-sm">${esc(cls.name)}</div>
+        <div class="stu-name-big">${s.grade?`${s.grade}학년 ${s.cls}반 `:''}${num?num+'번 ':''}${esc(s.name)}</div>
+      </div>
+    </div>
+  </div>
+  <div class="sbox">
+    <div class="sbox-title">사진</div>
+    <input type="file" id="photoInp" accept="image/*" style="display:none" onchange="handlePhotoFile(event,${cls.id},${s.id})">
+    <div onclick="document.getElementById('photoInp').click()" style="cursor:pointer;text-align:center;padding:10px 0">
+      ${s.photo
+        ?`<img src="${s.photo}" style="width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid #e2e8f0;display:block;margin:0 auto 8px"><span style="font-size:12px;color:#94a3b8">사진 변경하기</span>`
+        :`<div style="width:90px;height:90px;border-radius:50%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 8px;border:2px dashed #cbd5e1">👤</div><span style="font-size:13px;color:#3b82f6;font-weight:600">📷 사진 등록</span>`}
+    </div>
+  </div>
+  ${Object.keys(summary).length?`
+  <div class="sbox">
+    <div class="sbox-title">누적 요약</div>
+    <div class="tag-row">${Object.entries(summary).sort((a,b)=>b[1]-a[1]).map(([tid,cnt])=>{const t=tagInfo(tid);return t?`<span class="chip" style="background:${t.bg};color:${t.color};border:1px solid ${t.color}">${t.label} ${cnt}회</span>`:''}).join('')}</div>
+  </div>`:''}
+  <div class="sbox">
+    <div class="sbox-title">새 기록 추가</div>
+    <input type="date" class="date-inp" value="${state.dateInput}" onchange="state.dateInput=this.value">
+    <div class="tag-grid">${TAGS.map(t=>{const a=state.selTags.includes(t.id);return`<button class="tag-btn" style="background:${a?t.color:t.bg};color:${a?'#fff':t.color};border-color:${t.color}" onclick="toggleTag('${t.id}')">${t.label}</button>`}).join('')}</div>
+    <textarea id="memoTA" class="inp" placeholder="메모 (선택사항)" rows="2" oninput="state.memo=this.value"></textarea>
+    <button class="btn-primary" onclick="addRecord(${cls.id},${s.id})" ${(!state.selTags.length&&!state.memo.trim())?'disabled':''}>기록 저장</button>
+  </div>
+  <div class="sbox pb40">
+    <div class="sbox-title">기록 내역 (${s.records.length}건)</div>
+    ${s.records.length===0?'<div class="empty">아직 기록이 없습니다.</div>':''}
+    ${s.records.map(rec=>`
+    <div class="rec-item">
+      <div class="rec-date">${rec.date}</div>
+      <div class="tag-row">${rec.tags.map(tid=>{const t=tagInfo(tid);return t?`<span class="chip" style="background:${t.bg};color:${t.color};border:1px solid ${t.color}">${t.label}</span>`:''}).join('')}</div>
+      ${rec.memo?`<div class="rec-memo">${esc(rec.memo)}</div>`:''}
+      <button class="rec-del" onclick="deleteRecord(${cls.id},${s.id},${rec.id})">×</button>
+    </div>`).join('')}
+  </div>`;
+}
+
+// ── 엑셀 내보내기 ────────────────────────────────────
+window.exportExcel=function(classId){
+  const cls=getCls(classId);
+  if(!cls)return;
+
+  const tagLabel=id=>{const t=TAGS.find(t=>t.id===id);return t?t.label.replace(/^[^\s]+\s/,''):id};
+
+  // 헤더
+  const rows=[['학년','반','번호','이름','기록날짜','태도태그','메모']];
+
+  cls.students.slice().sort((a,b)=>(a.num||a.number||0)-(b.num||b.number||0)).forEach(s=>{
+    const num=s.num||s.number||'';
+    if(s.records.length===0){
+      rows.push([s.grade||'',s.cls||'',num,s.name,'','','']);
+    } else {
+      s.records.forEach(r=>{
+        rows.push([
+          s.grade||'', s.cls||'', num, s.name,
+          r.date,
+          r.tags.map(tagLabel).join(', '),
+          r.memo||''
+        ]);
+      });
+    }
+  });
+
+  // CSV 생성 (BOM 포함 → 엑셀 한글 깨짐 방지)
+  const csvContent = '\uFEFF' + rows.map(row=>
+    row.map(cell=>'"'+String(cell).replace(/"/g,'""')+'"').join(',')
+  ).join('\r\n');
+
+  const blob=new Blob([csvContent],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`누가기록_${cls.name}_${todayStr()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+window.openClass=function(id){state.activeClassId=id;state.view='class';state.searchQuery='';state.filterTag=null;state.showImport=false;render()}
+window.openStudent=function(cid,sid){state.activeClassId=cid;state.activeStudentId=sid;state.view='student';state.selTags=[];state.memo='';state.dateInput=todayStr();render()}
+window.addClass=addClass;
+window.deleteClass=deleteClass;
+window.toggleTag=toggleTag;
+window.addRecord=addRecord;
+window.deleteRecord=deleteRecord;
+
+render();
+</script>
+</body>
+</html>
